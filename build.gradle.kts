@@ -13,14 +13,16 @@ repositories {
 }
 
 val ktorVersion = "2.3.6"
-val logbackVersion = "1.2.11"
 val junitVersion = "5.10.1"
 val jacksonVersion = "2.15.3"
 val mockWebServerVersion = "4.12.0"
+val logbackVersion = "1.4.11"
+val logstashEncoderVersion = "7.4"
 
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
+    implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
