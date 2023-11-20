@@ -31,11 +31,11 @@ fun Application.main() {
     intercept(ApplicationCallPipeline.Call) {
         val httpMethod = call.request.httpMethod
         val requestUri = call.request.uri.replace(BASE_PATH, "")
+
         when (call.request.uri) {
             "/isAlive",
             "/isReady" -> {
                 call.respond(HttpStatusCode(HttpStatusCode.OK.value, HttpStatusCode.OK.description))
-                return@intercept finish()
             }
 
             else -> {
