@@ -9,10 +9,10 @@ spec:
   image: {{image}}
   port: 8080
   liveness:
-    path: isalive
+    path: isAlive
     initialDelay: 5
   readiness:
-    path: isready
+    path: isReady
     initialDelay: 5
   resources:
     limits:
