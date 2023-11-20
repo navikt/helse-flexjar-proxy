@@ -1,0 +1,25 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: flexjar-proxy
+  namespace: tbd
+  labels:
+    team: tbd
+spec:
+  image: {{image}}
+  port: 8080
+  liveness:
+    path: isalive
+    initialDelay: 5
+  readiness:
+    path: isready
+    initialDelay: 5
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  replicas:
+    min: 1
+    max: 1
