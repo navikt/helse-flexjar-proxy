@@ -7,6 +7,8 @@ metadata:
     team: tbd
 spec:
   image: {{image}}
+  ingresses:
+    - https://www.ekstern.dev.nav.no/syk/flexjar
   port: 8080
   liveness:
     path: isAlive
