@@ -28,7 +28,6 @@ fun Application.main() {
 
     intercept(ApplicationCallPipeline.Call) {
         val httpMethod = call.request.httpMethod
-        log.info("Intercepted ${httpMethod.value} call to \"${call.request.uri}\".")
 
         when (call.request.uri) {
             "/isAlive",
@@ -38,6 +37,7 @@ fun Application.main() {
             }
 
             else -> {
+                log.info("Intercepted ${httpMethod.value} call to \"${call.request.uri}\".")
                 when (httpMethod) {
                     Post -> {
                         call.respond(HttpStatusCode.Accepted)
