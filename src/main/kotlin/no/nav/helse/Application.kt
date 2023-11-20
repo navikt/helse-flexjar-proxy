@@ -23,12 +23,14 @@ internal val objectMapper: ObjectMapper = ObjectMapper().apply {
     configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
 }
 
+private const val BASE_PATH = "/syk/flexjar"
+
 fun Application.main() {
     val log = LoggerFactory.getLogger("no.nav.helse.Application.main")
 
     intercept(ApplicationCallPipeline.Call) {
         val httpMethod = call.request.httpMethod
-
+        val requestUri = call.request.uri.replace(BASE_PATH, "")
         when (call.request.uri) {
             "/isAlive",
             "/isReady" -> {
@@ -37,7 +39,7 @@ fun Application.main() {
             }
 
             else -> {
-                log.info("Intercepted ${httpMethod.value} call to \"${call.request.uri}\".")
+                log.info("Intercepted ${httpMethod.value} call to \"${requestUri}\".")
                 when (httpMethod) {
                     Post -> {
                         call.respond(HttpStatusCode.Accepted)
