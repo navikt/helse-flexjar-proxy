@@ -1,14 +1,13 @@
-name: Bygg og deploy
+name: Bygg og Deploy
 
 on:
   push:
 
 jobs:
   set_version:
-    name: set image name
     runs-on: ubuntu-latest
     steps:
-      - name: create docker tag
+      - name: Create Docker Tag
         run: echo "TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
     outputs:
       image: ghcr.io/${{ github.repository }}/flexjar-proxy:${{ env.TAG }}
@@ -25,17 +24,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17.x'
           cache: 'gradle'
-      - name: test and build
+      - name: Gradle Build
         run: ./gradlew build
-      - name: build docker image
+      - name: Build Docker Image
         run: docker build . --pull -t ${{ needs.set_version.outputs.image }}
-      - name: push docker image
+      - name: Push Docker Image
         run: |
           docker login --username "$GITHUB_REPOSITORY" -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
           docker push ${{ needs.set_version.outputs.image }}
 
-  deployDev:
-    name: Deploy to dev
+  deploy-to-dev:
+    if: github.ref_name == 'master'
     needs: [set_version, build]
     runs-on: ubuntu-latest
     steps:
