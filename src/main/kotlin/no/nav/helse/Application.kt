@@ -65,17 +65,7 @@ fun Application.main() {
             }
 
             "/debug" -> {
-                val allEnvs = System.getenv()
-                allEnvs.forEach { (key, value) ->
-
-                    val keys = listOf(
-                        "AZURE_APP_CLIENT_ID"
-                    )
-                    if (keys.contains(key)) {
-                        log.info("Environment variable $key has value $value.")
-                    }
-                }
-                call.respond(azureDebug.azureAppClientId ?: "null")
+                call.respond(azureDebug)
             }
 
             else -> {
