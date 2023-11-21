@@ -102,7 +102,7 @@ fun Application.main() {
 
                 try {
                     val azureResponse = callBackend()
-                    val callFlexjarBackend = callFlexjarBackend(httpClient, azureResponse, log)
+                    callFlexjarBackend(httpClient, azureResponse, log)
                     call.respond(azureResponse)
                 } catch (e: Exception) {
                     log.warn("Failed to call Azure AD for credentials: ${e.message}")
