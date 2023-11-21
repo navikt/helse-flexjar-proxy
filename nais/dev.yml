@@ -6,6 +6,10 @@ metadata:
   labels:
     team: tbd
 spec:
+  azure:
+    application:
+      enabled: true
+      allowAllUsers: true
   image: {{image}}
   ingresses:
     - https://www.ekstern.dev.nav.no/syk/flexjar
