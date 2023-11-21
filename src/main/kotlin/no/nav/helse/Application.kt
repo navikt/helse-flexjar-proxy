@@ -11,11 +11,16 @@ import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.header
+import io.ktor.client.request.headers
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
+import io.ktor.http.contentType
 import io.ktor.serialization.jackson.JacksonConverter
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCallPipeline
@@ -26,6 +31,7 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -66,6 +72,8 @@ fun Application.main() {
         register(ContentType.Application.Json, JacksonConverter(objectMapper))
     }
 
+    val httpClient = createHttpClient()
+
     intercept(ApplicationCallPipeline.Call) {
         val httpMethod = call.request.httpMethod
         when (val requestUri = call.request.uri.replace(BASE_PATH, "")) {
@@ -76,7 +84,7 @@ fun Application.main() {
 
             "/debug" -> {
                 suspend fun callBackend(): AzureResponse {
-                    return createHttpClient().submitForm(
+                    return httpClient.submitForm(
                         url = azureDebug.azureOpenidConfigTokenEndpoint!!,
                         formParameters = Parameters.build {
                             append("client_id", azureDebug.azureAppClientId!!)
@@ -93,7 +101,9 @@ fun Application.main() {
                 }
 
                 try {
-                    call.respond(callBackend())
+                    val azureResponse = callBackend()
+                    val callFlexjarBackend = callFlexjarBackend(httpClient, azureResponse, log)
+                    call.respond(azureResponse)
                 } catch (e: Exception) {
                     log.warn("Failed to call Azure AD for credentials: ${e.message}")
                     call.respond(HttpStatusCode.InternalServerError)
@@ -117,6 +127,35 @@ fun Application.main() {
     }
 }
 
+private suspend fun callFlexjarBackend(httpClient: HttpClient, azureResponse: AzureResponse, log: Logger): Boolean {
+    val flexjarBackendUrl = "http://flexjar-backend.flex/api/v1/feedback/azure"
+
+    val feedbackInn = mapOf(
+        "feedback" to "hade",
+        "app" to "spinnsyn-frontend",
+        "feedbackId" to "spinnsyn refusjon",
+        "indre" to mapOf(
+            "hei" to 5
+        )
+    ).serializeToString()
+
+    try {
+        val response: HttpResponse = httpClient.post(flexjarBackendUrl) {
+            contentType(ContentType.Application.Json)
+            headers {
+                append("Authorization", "Bearer ${azureResponse.accessToken}")
+                setBody(feedbackInn)
+            }
+        }
+        log.info("flexjarBackend response: ${response.status}")
+    } catch (e: Exception) {
+        log.warn("Failed to call flexjarBackend: ${e.message}")
+        return false
+    }
+
+    return true
+}
+
 private fun createHttpClient() = HttpClient(CIO) {
     install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
         register(ContentType.Application.Json, JacksonConverter(objectMapper))
@@ -134,3 +173,6 @@ private data class AzureResponse(
     @JsonAlias("token_type")
     val tokenType: String
 )
+
+fun Any.serializeToString(): String =
+    objectMapper.writeValueAsString(this)
