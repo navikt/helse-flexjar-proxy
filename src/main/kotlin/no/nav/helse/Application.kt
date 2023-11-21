@@ -28,7 +28,7 @@ internal val objectMapper: ObjectMapper = ObjectMapper().apply {
     configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
 }
 
-private const val BASE_PATH = "/syk/flexjar"
+const val BASE_PATH = "/syk/flexjar"
 
 private data class AzureDebug(
     val azureAppClientId: String?,
@@ -58,9 +58,7 @@ fun Application.main() {
 
     intercept(ApplicationCallPipeline.Call) {
         val httpMethod = call.request.httpMethod
-        val requestUri = call.request.uri.replace(BASE_PATH, "")
-
-        when (call.request.uri) {
+        when (val requestUri = call.request.uri.replace(BASE_PATH, "")) {
             "/isAlive",
             "/isReady" -> {
                 call.respond(HttpStatusCode(HttpStatusCode.OK.value, HttpStatusCode.OK.description))
@@ -71,14 +69,13 @@ fun Application.main() {
                 allEnvs.forEach { (key, value) ->
 
                     val keys = listOf(
-                        "AZURE_APP_CLIENT_ID",
-                        "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"
+                        "AZURE_APP_CLIENT_ID"
                     )
                     if (keys.contains(key)) {
                         log.info("Environment variable $key has value $value.")
                     }
                 }
-                call.respond(azureDebug)
+                call.respond(azureDebug.azureAppClientId ?: "null")
             }
 
             else -> {
@@ -86,10 +83,6 @@ fun Application.main() {
                 when (httpMethod) {
                     HttpMethod.Post -> {
                         call.respond(HttpStatusCode.Accepted)
-                    }
-
-                    HttpMethod.Get -> {
-                        call.respond(HttpStatusCode.OK)
                     }
 
                     else -> {

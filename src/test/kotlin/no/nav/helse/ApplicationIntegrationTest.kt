@@ -4,6 +4,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.testApplication
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test
 class ApplicationIntegrationTest {
 
     @Test
-    fun kallTilIsAliveSvarer200() = testApplication {
+    fun `Kall til isAlive svarer med 200 OK`() = testApplication {
         val httpClient = createHttpClient()
 
         val httpResponse: HttpResponse = httpClient.get("/isAlive")
@@ -22,7 +23,7 @@ class ApplicationIntegrationTest {
     }
 
     @Test
-    fun kallTilIsReadySvarer200() = testApplication {
+    fun `Kall til isReady svarer med 200 OK`() = testApplication {
         val httpClient = createHttpClient()
 
         val httpResponse: HttpResponse = httpClient.get("/isReady")
@@ -32,16 +33,7 @@ class ApplicationIntegrationTest {
     }
 
     @Test
-    fun kallTilGet() = testApplication {
-        val httpClient = createHttpClient()
-
-        val httpResponse: HttpResponse = httpClient.get("/test")
-
-        assertEquals(HttpStatusCode.OK, httpResponse.status)
-    }
-
-    @Test
-    fun kallTilPost() = testApplication {
+    fun `Alle POSTkall blir akseptert`() = testApplication {
         val httpClient = createHttpClient()
 
         val httpResponse: HttpResponse = httpClient.post("/test")
@@ -50,11 +42,21 @@ class ApplicationIntegrationTest {
     }
 
     @Test
-    fun kallTilPut() = testApplication {
+    fun `Ingen PUT-kall blir akseptert`() = testApplication {
         val httpClient = createHttpClient()
 
         val httpResponse: HttpResponse = httpClient.put("/test")
 
         assertEquals(HttpStatusCode.MethodNotAllowed, httpResponse.status)
+    }
+
+    @Test
+    fun `Kall til debug returnerer azure-app-client-id`() = testApplication {
+        val httpClient = createHttpClient()
+
+        httpClient.get("/debug").apply {
+            assertEquals(HttpStatusCode.OK, status)
+            assertEquals("azure-app-client-id", bodyAsText())
+        }
     }
 }
