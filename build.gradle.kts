@@ -18,6 +18,7 @@ val jacksonVersion = "2.16.0"
 val mockWebServerVersion = "4.12.0"
 val logbackVersion = "1.4.11"
 val logstashEncoderVersion = "7.4"
+val tokenClientCoreVersion = "3.1.8"
 
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
@@ -33,6 +34,7 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
+    implementation("no.nav.security:token-client-core:$tokenClientCoreVersion")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")

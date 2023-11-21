@@ -5,10 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Parameters
 import io.ktor.serialization.jackson.JacksonConverter
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCallPipeline
@@ -20,6 +26,8 @@ import io.ktor.server.request.httpMethod
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import org.slf4j.LoggerFactory
+import java.nio.charset.StandardCharsets
+import java.util.*
 
 internal val objectMapper: ObjectMapper = ObjectMapper().apply {
     registerKotlinModule()
@@ -65,7 +73,29 @@ fun Application.main() {
             }
 
             "/debug" -> {
-                call.respond(azureDebug)
+                suspend fun callBackend(): AzureResponse {
+                    return createHttpClient().submitForm(
+                        url = "",
+                        formParameters = Parameters.build {
+                            append("client_id", azureDebug.azureAppClientId!!)
+                            append("client_secret", azureDebug.azureAppClientSecret!!)
+                            append("scope", "api://dev-gcp.flex.flexjar-backend/.default")
+                            append("grant_type", "client_credentials")
+                        }
+                    ) {
+                        header(
+                            "Authorization",
+                            "Basic ${basicAuth(azureDebug.azureAppClientId!!, azureDebug.azureAppClientSecret!!)}"
+                        )
+                    }.body()
+                }
+
+                try {
+                    call.respond(callBackend())
+                } catch (e: Exception) {
+                    log.warn("Failed to call Azure AD for credentials: ${e.message}")
+                    call.respond(HttpStatusCode.InternalServerError)
+                }
             }
 
             else -> {
@@ -84,3 +114,18 @@ fun Application.main() {
         }
     }
 }
+
+private fun createHttpClient() = HttpClient(CIO) {
+    install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
+        register(ContentType.Application.Json, JacksonConverter(objectMapper))
+    }
+}
+
+private fun basicAuth(clientId: String, clientSecret: String) =
+    Base64.getEncoder().encodeToString("$clientId:$clientSecret".toByteArray(StandardCharsets.UTF_8))
+
+data class AzureResponse(
+    val accessToken: String,
+    val expiresIn: Long,
+    val tokenType: String
+)
