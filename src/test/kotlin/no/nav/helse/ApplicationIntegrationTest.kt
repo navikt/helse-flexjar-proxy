@@ -49,14 +49,4 @@ class ApplicationIntegrationTest {
 
         assertEquals(HttpStatusCode.MethodNotAllowed, httpResponse.status)
     }
-
-    @Test
-    fun `Kall til debug returnerer azure-app-client-id`() = testApplication {
-        val httpClient = createHttpClient()
-
-        httpClient.get("/debug").apply {
-            assertEquals(HttpStatusCode.OK, status)
-            assertEquals("azure-app-client-id", bodyAsText())
-        }
-    }
 }
