@@ -34,7 +34,7 @@ jobs:
           docker push ${{ needs.set_version.outputs.image }}
 
   deploy-to-dev:
-    if: github.ref_name == 'master'
+    if: github.ref_name == 'main'
     needs: [set_version, build]
     runs-on: ubuntu-latest
     steps:
