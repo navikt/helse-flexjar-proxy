@@ -6,10 +6,10 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.header
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -44,6 +44,7 @@ private data class AzureDebug(
     val azureOpenidConfigTokenEndpoint: String?
 )
 
+@Suppress("unused")
 fun Application.main() {
     val log = LoggerFactory.getLogger("no.nav.helse.Application.main")
 
@@ -73,7 +74,7 @@ fun Application.main() {
             }
 
             "/debug" -> {
-                suspend fun callBackend(): String {
+                suspend fun callBackend(): AzureResponse {
                     return createHttpClient().submitForm(
                         url = azureDebug.azureOpenidConfigTokenEndpoint!!,
                         formParameters = Parameters.build {
@@ -87,7 +88,7 @@ fun Application.main() {
                             "Authorization",
                             "Basic ${basicAuth(azureDebug.azureAppClientId!!, azureDebug.azureAppClientSecret!!)}"
                         )
-                    }.bodyAsText()
+                    }.body()
                 }
 
                 try {
@@ -124,7 +125,7 @@ private fun createHttpClient() = HttpClient(CIO) {
 private fun basicAuth(clientId: String, clientSecret: String) =
     Base64.getEncoder().encodeToString("$clientId:$clientSecret".toByteArray(StandardCharsets.UTF_8))
 
-data class AzureResponse(
+private data class AzureResponse(
     val accessToken: String,
     val expiresIn: Long,
     val tokenType: String
