@@ -1,5 +1,6 @@
 package no.nav.helse
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
@@ -126,7 +127,10 @@ private fun basicAuth(clientId: String, clientSecret: String) =
     Base64.getEncoder().encodeToString("$clientId:$clientSecret".toByteArray(StandardCharsets.UTF_8))
 
 private data class AzureResponse(
+    @JsonAlias("access_token")
     val accessToken: String,
+    @JsonAlias("expires_in")
     val expiresIn: Long,
+    @JsonAlias("token_type")
     val tokenType: String
 )
