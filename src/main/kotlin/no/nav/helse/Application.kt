@@ -5,13 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.jackson.JacksonConverter
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCallPipeline
 import io.ktor.server.application.call
 import io.ktor.server.application.install
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.uri
@@ -27,14 +30,30 @@ internal val objectMapper: ObjectMapper = ObjectMapper().apply {
 
 private const val BASE_PATH = "/syk/flexjar"
 
+private data class AzureDebug(
+    val azureAppClientId: String?,
+    val azureAppClientSecret: String?,
+    val azureOpenidConfigTokenEndpoint: String?
+)
+
 fun Application.main() {
     val log = LoggerFactory.getLogger("no.nav.helse.Application.main")
+
+    val azureDebug = AzureDebug(
+        environment.config.property("no.nav.security.azure_app_client_id").getString(),
+        environment.config.property("no.nav.security.azure_app_client_secret").getString(),
+        environment.config.property("no.nav.security.azure_openid_config_token_endpoint").getString()
+    )
 
     install(CORS) {
         allowHost("data.intern.dev.nav.no", schemes = listOf("https"))
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowHeader(HttpHeaders.ContentType)
+    }
+
+    install(ContentNegotiation) {
+        register(ContentType.Application.Json, JacksonConverter(objectMapper))
     }
 
     intercept(ApplicationCallPipeline.Call) {
@@ -45,6 +64,10 @@ fun Application.main() {
             "/isAlive",
             "/isReady" -> {
                 call.respond(HttpStatusCode(HttpStatusCode.OK.value, HttpStatusCode.OK.description))
+            }
+
+            "/debug" -> {
+                call.respond(azureDebug)
             }
 
             else -> {
