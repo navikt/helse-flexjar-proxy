@@ -67,6 +67,17 @@ fun Application.main() {
             }
 
             "/debug" -> {
+                val allEnvs = System.getenv()
+                allEnvs.forEach { (key, value) ->
+
+                    val keys = listOf(
+                        "AZURE_APP_CLIENT_ID",
+                        "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT",
+                    )
+                    if (keys.contains(key)) {
+                        log.info("Environment variable $key has value $value.")
+                    }
+                }
                 call.respond(azureDebug)
             }
 
