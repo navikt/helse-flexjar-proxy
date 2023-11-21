@@ -6,10 +6,10 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.header
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -73,7 +73,7 @@ fun Application.main() {
             }
 
             "/debug" -> {
-                suspend fun callBackend(): AzureResponse {
+                suspend fun callBackend(): String {
                     return createHttpClient().submitForm(
                         url = azureDebug.azureOpenidConfigTokenEndpoint!!,
                         formParameters = Parameters.build {
@@ -87,7 +87,7 @@ fun Application.main() {
                             "Authorization",
                             "Basic ${basicAuth(azureDebug.azureAppClientId!!, azureDebug.azureAppClientSecret!!)}"
                         )
-                    }.body()
+                    }.bodyAsText()
                 }
 
                 try {
