@@ -72,7 +72,7 @@ fun Application.main() {
 
                     val keys = listOf(
                         "AZURE_APP_CLIENT_ID",
-                        "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT",
+                        "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"
                     )
                     if (keys.contains(key)) {
                         log.info("Environment variable $key has value $value.")
