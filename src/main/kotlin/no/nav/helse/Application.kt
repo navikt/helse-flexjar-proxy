@@ -75,7 +75,7 @@ fun Application.main() {
             "/debug" -> {
                 suspend fun callBackend(): AzureResponse {
                     return createHttpClient().submitForm(
-                        url = "",
+                        url = azureDebug.azureOpenidConfigTokenEndpoint!!,
                         formParameters = Parameters.build {
                             append("client_id", azureDebug.azureAppClientId!!)
                             append("client_secret", azureDebug.azureAppClientSecret!!)
