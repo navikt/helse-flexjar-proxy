@@ -14,11 +14,14 @@ import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
+import io.ktor.http.content.OutgoingContent.WriteChannelContent
 import io.ktor.http.contentType
 import io.ktor.serialization.jackson.JacksonConverter
 import io.ktor.server.application.Application
@@ -30,6 +33,9 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
+import io.ktor.util.filter
+import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.utils.io.copyAndClose
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -90,15 +96,37 @@ fun Application.main() {
                         log.info("Kaller flexjarBackendUrl: $flexjarUrl")
 
                         val azureResponse = hentAzureToken(httpClient, azureConfig)
-                        val flexjarResponse = httpClient.post(flexjarUrl) {
+                        val response = httpClient.post(flexjarUrl) {
                             contentType(ContentType.Application.Json)
                             headers {
                                 append("Authorization", "Bearer ${azureResponse.accessToken}")
                             }
                             setBody(call.request.receiveChannel())
                         }
-                        log.info("Mottok: ${flexjarResponse.status} fra flexjar-backend.")
-                        call.respond(flexjarResponse)
+                        log.info("Mottok: ${response.status} fra flexjar-backend.")
+
+                        call.respond(object : WriteChannelContent() {
+                            override val contentLength = response.headers[HttpHeaders.ContentLength]?.toLong()
+                            override val contentType =
+                                response.headers[HttpHeaders.ContentType]?.let { ContentType.parse(it) }
+
+                            // Filtrer bort Content-Type og Content-Length fra responsen siden de er satt eksplisitt.
+                            override val headers = Headers.build {
+                                appendAll(
+                                    response.headers.filter { key, _ ->
+                                        !key.equals(
+                                            HttpHeaders.ContentType,
+                                            ignoreCase = true
+                                        ) && !key.equals(HttpHeaders.ContentLength, ignoreCase = true)
+                                    }
+                                )
+                            }
+                            override val status = response.status
+
+                            override suspend fun writeTo(channel: ByteWriteChannel) {
+                                response.bodyAsChannel().copyAndClose(channel)
+                            }
+                        })
                     }
 
                     else -> {
