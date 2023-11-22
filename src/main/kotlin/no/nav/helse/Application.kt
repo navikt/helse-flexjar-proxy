@@ -86,17 +86,18 @@ fun Application.main() {
                 log.info("Intercepted ${httpMethod.value} call to \"$requestUri\".")
                 when (httpMethod) {
                     HttpMethod.Post -> {
-                        val flexjarBackendUrl = "http://flexjar-backend.flex$requestUri"
-                        log.info("Kaller flexjarBackendUrl: $flexjarBackendUrl")
+                        val flexjarUrl = "http://flexjar-backend.flex$requestUri"
+                        log.info("Kaller flexjarBackendUrl: $flexjarUrl")
 
                         val azureResponse = hentAzureToken(httpClient, azureConfig)
-                        val flexjarResponse = httpClient.post("flexjarUrl") {
+                        val flexjarResponse = httpClient.post(flexjarUrl) {
                             contentType(ContentType.Application.Json)
                             headers {
                                 append("Authorization", "Bearer ${azureResponse.accessToken}")
                             }
                             setBody(call.request.receiveChannel())
                         }
+                        log.info("Mottok: ${flexjarResponse.status} fra flexjar-backend.")
                         call.respond(flexjarResponse)
                     }
 
