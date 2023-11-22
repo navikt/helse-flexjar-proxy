@@ -131,11 +131,14 @@ private suspend fun callFlexjarBackend(httpClient: HttpClient, azureResponse: Az
     val flexjarBackendUrl = "http://flexjar-backend.flex/api/v1/feedback/azure"
 
     val feedbackInn = mapOf(
-        "feedback" to "hade",
-        "app" to "spinnsyn-frontend",
-        "feedbackId" to "spinnsyn refusjon",
+        "feedback" to "Test",
+        "app" to "tbd-datafortelling",
+        "feedbackId" to "datafortelling-slutt",
+        "svar" to "NEI",
         "indre" to mapOf(
-            "hei" to 5
+            "Verdi" to 5,
+            "soknadstype" to "Test",
+            "svar" to "JA"
         )
     ).serializeToString()
 
