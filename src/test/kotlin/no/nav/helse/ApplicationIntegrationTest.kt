@@ -7,6 +7,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.testApplication
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class ApplicationIntegrationTest {
@@ -32,6 +33,7 @@ class ApplicationIntegrationTest {
     }
 
     @Test
+    @Disabled("Kan ikke teste dette før vi mocker kall til Azure AD og bruker MockWebServer som backend.")
     fun `Alle POSTkall blir akseptert`() = testApplication {
         val httpClient = createHttpClient()
 

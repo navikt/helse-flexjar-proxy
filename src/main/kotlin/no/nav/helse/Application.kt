@@ -14,7 +14,6 @@ import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -83,20 +82,26 @@ fun Application.main() {
                 call.respond(HttpStatusCode(HttpStatusCode.OK.value, HttpStatusCode.OK.description))
             }
 
-            "/debug" -> {
-                val azureResponse = hentAzureToken(httpClient, azureConfig)
-                call.respond(callFlexjarBackend(httpClient, azureResponse))
-            }
-
             else -> {
-                log.info("Intercepted ${httpMethod.value} call to \"${requestUri}\".")
+                log.info("Intercepted ${httpMethod.value} call to \"$requestUri\".")
                 when (httpMethod) {
                     HttpMethod.Post -> {
-                        call.respond(HttpStatusCode.Accepted)
+                        val flexjarBackendUrl = "http://flexjar-backend.flex$requestUri"
+                        log.info("Kaller flexjarBackendUrl: $flexjarBackendUrl")
+
+                        val azureResponse = hentAzureToken(httpClient, azureConfig)
+                        val flexjarResponse = httpClient.post("flexjarUrl") {
+                            contentType(ContentType.Application.Json)
+                            headers {
+                                append("Authorization", "Bearer ${azureResponse.accessToken}")
+                            }
+                            setBody(call.request.receiveChannel())
+                        }
+                        call.respond(flexjarResponse)
                     }
 
                     else -> {
-                        log.info("Ignoring ${httpMethod.value} call to \"${call.request.uri}\".")
+                        log.info("Ignoring ${httpMethod.value} call to \"$requestUri\".")
                         call.respond(HttpStatusCode(405, "Method Not Allowed"))
                     }
                 }
@@ -120,25 +125,6 @@ private suspend fun hentAzureToken(httpClient: HttpClient, azureConfig: AzureCon
             "Basic ${basicAuth(azureConfig.appClientId, azureConfig.appClientSecret)}"
         )
     }.body()
-}
-
-private suspend fun callFlexjarBackend(httpClient: HttpClient, azureResponse: AzureResponse): HttpResponse {
-    val flexjarBackendUrl = "http://flexjar-backend.flex/api/v1/feedback/azure"
-
-    val feedbackInn = mapOf(
-        "feedback" to "Test",
-        "app" to "tbd-datafortelling",
-        "feedbackId" to "datafortelling-slutt",
-        "svar" to "NEI"
-    ).serializeToString()
-
-    return httpClient.post(flexjarBackendUrl) {
-        contentType(ContentType.Application.Json)
-        headers {
-            append("Authorization", "Bearer ${azureResponse.accessToken}")
-            setBody(feedbackInn)
-        }
-    }
 }
 
 private fun createHttpClient() = HttpClient(CIO) {
