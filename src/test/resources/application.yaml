@@ -5,9 +5,8 @@ ktor:
     modules:
       - no.nav.helse.ApplicationKt.main
 
-no:
-  nav:
-    security:
-      azure_app_client_id: "azure-app-client-id"
-      azure_app_client_secret: "azure-app-client-secret"
-      azure_openid_config_token_endpoint: "azure-openid-config-token-endpoint"
+security:
+  app_client_id: "azure-app-client-id"
+  app_client_secret: "azure-app-client-secret"
+  app_scope: "azure-app-scope"
+  config_token_endpoint: "azure-openid-config-token-endpoint"

@@ -31,7 +31,6 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -45,20 +44,22 @@ internal val objectMapper: ObjectMapper = ObjectMapper().apply {
 
 const val BASE_PATH = "/syk/flexjar"
 
-private data class AzureDebug(
-    val azureAppClientId: String?,
-    val azureAppClientSecret: String?,
-    val azureOpenidConfigTokenEndpoint: String?
+private data class AzureConfig(
+    val appClientId: String,
+    val appClientSecret: String,
+    val appScope: String,
+    val configTokenEndpoint: String
 )
 
 @Suppress("unused")
 fun Application.main() {
     val log = LoggerFactory.getLogger("no.nav.helse.Application.main")
 
-    val azureDebug = AzureDebug(
-        environment.config.property("no.nav.security.azure_app_client_id").getString(),
-        environment.config.property("no.nav.security.azure_app_client_secret").getString(),
-        environment.config.property("no.nav.security.azure_openid_config_token_endpoint").getString()
+    val azureConfig = AzureConfig(
+        appClientId = environment.config.property("security.app_client_id").getString(),
+        appClientSecret = environment.config.property("security.app_client_secret").getString(),
+        appScope = environment.config.property("security.app_scope").getString(),
+        configTokenEndpoint = environment.config.property("security.config_token_endpoint").getString()
     )
 
     install(CORS) {
@@ -83,31 +84,8 @@ fun Application.main() {
             }
 
             "/debug" -> {
-                suspend fun callBackend(): AzureResponse {
-                    return httpClient.submitForm(
-                        url = azureDebug.azureOpenidConfigTokenEndpoint!!,
-                        formParameters = Parameters.build {
-                            append("client_id", azureDebug.azureAppClientId!!)
-                            append("client_secret", azureDebug.azureAppClientSecret!!)
-                            append("scope", "api://dev-gcp.flex.flexjar-backend/.default")
-                            append("grant_type", "client_credentials")
-                        }
-                    ) {
-                        header(
-                            "Authorization",
-                            "Basic ${basicAuth(azureDebug.azureAppClientId!!, azureDebug.azureAppClientSecret!!)}"
-                        )
-                    }.body()
-                }
-
-                try {
-                    val azureResponse = callBackend()
-                    callFlexjarBackend(httpClient, azureResponse, log)
-                    call.respond(azureResponse)
-                } catch (e: Exception) {
-                    log.warn("Failed to call Azure AD for credentials: ${e.message}")
-                    call.respond(HttpStatusCode.InternalServerError)
-                }
+                val azureResponse = hentAzureToken(httpClient, azureConfig)
+                call.respond(callFlexjarBackend(httpClient, azureResponse))
             }
 
             else -> {
@@ -127,36 +105,40 @@ fun Application.main() {
     }
 }
 
-private suspend fun callFlexjarBackend(httpClient: HttpClient, azureResponse: AzureResponse, log: Logger): Boolean {
+private suspend fun hentAzureToken(httpClient: HttpClient, azureConfig: AzureConfig): AzureResponse {
+    return httpClient.submitForm(
+        url = azureConfig.configTokenEndpoint,
+        formParameters = Parameters.build {
+            append("client_id", azureConfig.appClientId)
+            append("client_secret", azureConfig.appClientSecret)
+            append("scope", azureConfig.appScope)
+            append("grant_type", "client_credentials")
+        }
+    ) {
+        header(
+            "Authorization",
+            "Basic ${basicAuth(azureConfig.appClientId, azureConfig.appClientSecret)}"
+        )
+    }.body()
+}
+
+private suspend fun callFlexjarBackend(httpClient: HttpClient, azureResponse: AzureResponse): HttpResponse {
     val flexjarBackendUrl = "http://flexjar-backend.flex/api/v1/feedback/azure"
 
     val feedbackInn = mapOf(
         "feedback" to "Test",
         "app" to "tbd-datafortelling",
         "feedbackId" to "datafortelling-slutt",
-        "svar" to "NEI",
-        "indre" to mapOf(
-            "Verdi" to 5,
-            "soknadstype" to "Test",
-            "svar" to "JA"
-        )
+        "svar" to "NEI"
     ).serializeToString()
 
-    try {
-        val response: HttpResponse = httpClient.post(flexjarBackendUrl) {
-            contentType(ContentType.Application.Json)
-            headers {
-                append("Authorization", "Bearer ${azureResponse.accessToken}")
-                setBody(feedbackInn)
-            }
+    return httpClient.post(flexjarBackendUrl) {
+        contentType(ContentType.Application.Json)
+        headers {
+            append("Authorization", "Bearer ${azureResponse.accessToken}")
+            setBody(feedbackInn)
         }
-        log.info("flexjarBackend response: ${response.status}")
-    } catch (e: Exception) {
-        log.warn("Failed to call flexjarBackend: ${e.message}")
-        return false
     }
-
-    return true
 }
 
 private fun createHttpClient() = HttpClient(CIO) {
