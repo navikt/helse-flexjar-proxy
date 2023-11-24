@@ -1,4 +1,4 @@
-ingress: https://www.ekstern.nav.no/syk/flexjar
+ingress: https://www.nav.no/syk/flexjar
 env:
   FLEXJAR_BACKEND_AAD_CLIENT_ID: prod-gcp.flex.flexjar-backend
   CORS_ALLOW_HOST: data.intern.nav.no
