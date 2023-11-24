@@ -36,6 +36,7 @@ import io.ktor.server.response.respond
 import io.ktor.util.filter
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -59,7 +60,6 @@ private data class AzureConfig(
 @Suppress("unused")
 fun Application.main() {
     val log = LoggerFactory.getLogger("no.nav.helse.Application.main")
-
     val corsAllowHost = environment.config.property("security.cors_allow_host").getString()
 
     val azureConfig = AzureConfig(
@@ -96,7 +96,7 @@ fun Application.main() {
                     HttpMethod.Post -> {
                         val flexjarUrl = "http://flexjar-backend.flex$requestUri"
 
-                        val azureResponse = hentAzureToken(httpClient, azureConfig)
+                        val azureResponse = hentAzureToken(httpClient, azureConfig, log)
                         val response = httpClient.post(flexjarUrl) {
                             contentType(ContentType.Application.Json)
                             headers {
@@ -139,7 +139,9 @@ fun Application.main() {
     }
 }
 
-private suspend fun hentAzureToken(httpClient: HttpClient, azureConfig: AzureConfig): AzureResponse {
+private suspend fun hentAzureToken(httpClient: HttpClient, azureConfig: AzureConfig, log: Logger): AzureResponse {
+    log.info("Henter Azure token: azureConfig.configTokenEndpoint=${azureConfig.configTokenEndpoint} med configTokenEndpoint=${azureConfig.serializeToString()}")
+
     return httpClient.submitForm(
         url = azureConfig.configTokenEndpoint,
         formParameters = Parameters.build {
