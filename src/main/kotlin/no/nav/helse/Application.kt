@@ -65,7 +65,7 @@ fun Application.main() {
     val azureConfig = AzureConfig(
         appClientId = environment.config.property("security.client_id").getString(),
         appClientSecret = environment.config.property("security.client_secret").getString(),
-        appScope = environment.config.property("security.scope").getString(),
+        appScope = "api://${environment.config.property("security.scope").getString()}/.default",
         configTokenEndpoint = environment.config.property("security.config_token_endpoint").getString()
     )
 
