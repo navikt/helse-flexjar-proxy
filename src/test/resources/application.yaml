@@ -6,7 +6,8 @@ ktor:
       - no.nav.helse.ApplicationKt.main
 
 security:
-  app_client_id: "azure-app-client-id"
-  app_client_secret: "azure-app-client-secret"
-  app_scope: "azure-app-scope"
+  client_id: "azure-app-client-id"
+  client_secret: "azure-app-client-secret"
+  scope: "azure-app-scope"
   config_token_endpoint: "azure-openid-config-token-endpoint"
+  cors_allow_host: "localhost:9000"

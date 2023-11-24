@@ -60,15 +60,17 @@ private data class AzureConfig(
 fun Application.main() {
     val log = LoggerFactory.getLogger("no.nav.helse.Application.main")
 
+    val corsAllowHost = environment.config.property("security.cors_allow_host").getString()
+
     val azureConfig = AzureConfig(
-        appClientId = environment.config.property("security.app_client_id").getString(),
-        appClientSecret = environment.config.property("security.app_client_secret").getString(),
-        appScope = environment.config.property("security.app_scope").getString(),
+        appClientId = environment.config.property("security.client_id").getString(),
+        appClientSecret = environment.config.property("security.client_secret").getString(),
+        appScope = environment.config.property("security.scope").getString(),
         configTokenEndpoint = environment.config.property("security.config_token_endpoint").getString()
     )
 
     install(CORS) {
-        allowHost("data.intern.dev.nav.no", schemes = listOf("https"))
+        allowHost(corsAllowHost, schemes = listOf("https"))
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowHeader(HttpHeaders.ContentType)
@@ -93,7 +95,6 @@ fun Application.main() {
                 when (httpMethod) {
                     HttpMethod.Post -> {
                         val flexjarUrl = "http://flexjar-backend.flex$requestUri"
-                        log.info("Kaller flexjarBackendUrl: $flexjarUrl")
 
                         val azureResponse = hentAzureToken(httpClient, azureConfig)
                         val response = httpClient.post(flexjarUrl) {
@@ -103,7 +104,6 @@ fun Application.main() {
                             }
                             setBody(call.request.receiveChannel())
                         }
-                        log.info("Mottok: ${response.status} fra flexjar-backend.")
 
                         call.respond(object : WriteChannelContent() {
                             override val contentLength = response.headers[HttpHeaders.ContentLength]?.toLong()

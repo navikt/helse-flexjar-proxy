@@ -6,7 +6,8 @@ ktor:
       - no.nav.helse.ApplicationKt.main
 
 security:
-  app_client_id: $AZURE_APP_CLIENT_ID
-  app_client_secret: $AZURE_APP_CLIENT_SECRET
-  app_scope: "api://dev-gcp.flex.flexjar-backend/.default"
+  client_id: $AZURE_APP_CLIENT_ID
+  client_secret: $AZURE_APP_CLIENT_SECRET
+  scope: "api://${FLEXJAR_BACKEND_AAD_CLIENT_ID}/.default"
   config_token_endpoint: $AZURE_OPENID_CONFIG_TOKEN_ENDPOINT
+  cors_allow_host: $CORS_ALLOW_HOST

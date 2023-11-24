@@ -34,7 +34,6 @@ jobs:
           docker push ${{ needs.set_version.outputs.image }}
 
   deploy-to-dev:
-    if: github.ref_name == 'main'
     needs: [set_version, build]
     runs-on: ubuntu-latest
     steps:
@@ -43,5 +42,20 @@ jobs:
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-gcp
-          RESOURCE: nais/dev.yml
+          RESOURCE: nais/nais.yml
+          VARS: nais/dev.yml
+          IMAGE: ${{ needs.set_version.outputs.image }}
+
+  deploy-to-prod:
+    if: github.ref_name == 'main'
+    needs: [set_version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: prod-gcp
+          RESOURCE: nais/nais.yml
+          VARS: nais/prod.yml
           IMAGE: ${{ needs.set_version.outputs.image }}

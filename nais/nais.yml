@@ -1,0 +1,42 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: flexjar-proxy
+  namespace: tbd
+  labels:
+    team: tbd
+spec:
+  azure:
+    application:
+      enabled: true
+      tenant: nav.no
+      allowAllUsers: true
+  image: {{image}}
+  ingresses:
+    - {{ingress}}
+  port: 8080
+  liveness:
+    path: isAlive
+    initialDelay: 5
+  readiness:
+    path: isReady
+    initialDelay: 5
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  replicas:
+    min: 1
+    max: 1
+  accessPolicy:
+    outbound:
+      rules:
+        - application: flexjar-backend
+          namespace: flex
+  env:
+  {{#each env}}
+    - name: {{@key}}
+      value: "{{this}}"
+  {{/each}}
