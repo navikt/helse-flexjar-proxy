@@ -36,6 +36,7 @@ import io.ktor.server.response.respond
 import io.ktor.util.filter
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -59,16 +60,17 @@ private data class AzureConfig(
 @Suppress("unused")
 fun Application.main() {
     val log = LoggerFactory.getLogger("no.nav.helse.Application.main")
+    val corsAllowHost = environment.config.property("security.cors_allow_host").getString()
 
     val azureConfig = AzureConfig(
-        appClientId = environment.config.property("security.app_client_id").getString(),
-        appClientSecret = environment.config.property("security.app_client_secret").getString(),
-        appScope = environment.config.property("security.app_scope").getString(),
+        appClientId = environment.config.property("security.client_id").getString(),
+        appClientSecret = environment.config.property("security.client_secret").getString(),
+        appScope = "api://${environment.config.property("security.scope").getString()}/.default",
         configTokenEndpoint = environment.config.property("security.config_token_endpoint").getString()
     )
 
     install(CORS) {
-        allowHost("data.intern.dev.nav.no", schemes = listOf("https"))
+        allowHost(corsAllowHost, schemes = listOf("https"))
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowHeader(HttpHeaders.ContentType)
@@ -93,9 +95,8 @@ fun Application.main() {
                 when (httpMethod) {
                     HttpMethod.Post -> {
                         val flexjarUrl = "http://flexjar-backend.flex$requestUri"
-                        log.info("Kaller flexjarBackendUrl: $flexjarUrl")
 
-                        val azureResponse = hentAzureToken(httpClient, azureConfig)
+                        val azureResponse = hentAzureToken(httpClient, azureConfig, log)
                         val response = httpClient.post(flexjarUrl) {
                             contentType(ContentType.Application.Json)
                             headers {
@@ -103,7 +104,6 @@ fun Application.main() {
                             }
                             setBody(call.request.receiveChannel())
                         }
-                        log.info("Mottok: ${response.status} fra flexjar-backend.")
 
                         call.respond(object : WriteChannelContent() {
                             override val contentLength = response.headers[HttpHeaders.ContentLength]?.toLong()
@@ -139,7 +139,9 @@ fun Application.main() {
     }
 }
 
-private suspend fun hentAzureToken(httpClient: HttpClient, azureConfig: AzureConfig): AzureResponse {
+private suspend fun hentAzureToken(httpClient: HttpClient, azureConfig: AzureConfig, log: Logger): AzureResponse {
+    log.info("Henter Azure token: azureConfig.configTokenEndpoint=${azureConfig.configTokenEndpoint} med configTokenEndpoint=${azureConfig.serializeToString()}")
+
     return httpClient.submitForm(
         url = azureConfig.configTokenEndpoint,
         formParameters = Parameters.build {
