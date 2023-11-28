@@ -33,6 +33,7 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
 import io.ktor.util.filter
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
@@ -88,6 +89,13 @@ fun Application.main() {
             "/isAlive",
             "/isReady" -> {
                 call.respond(HttpStatusCode(HttpStatusCode.OK.value, HttpStatusCode.OK.description))
+            }
+            "/log" -> {
+                log.info("test")
+                call.respondText("Test")
+            }
+            "/test" -> {
+                throw RuntimeException("Test exception")
             }
 
             else -> {

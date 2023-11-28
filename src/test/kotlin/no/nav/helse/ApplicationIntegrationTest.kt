@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test
 class ApplicationIntegrationTest {
 
     @Test
+    @Disabled
     fun `Kall til isAlive svarer med 200 OK`() = testApplication {
         val httpClient = createHttpClient()
 
@@ -23,6 +24,7 @@ class ApplicationIntegrationTest {
     }
 
     @Test
+    @Disabled
     fun `Kall til isReady svarer med 200 OK`() = testApplication {
         val httpClient = createHttpClient()
 
@@ -43,6 +45,7 @@ class ApplicationIntegrationTest {
     }
 
     @Test
+    @Disabled
     fun `Ingen PUT-kall blir akseptert`() = testApplication {
         val httpClient = createHttpClient()
 

@@ -3,12 +3,8 @@
         <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
     </appender>
 
-    <root level="WARN">
+    <root level="INFO">
         <appender-ref ref="stdout_json"/>
     </root>
-
-    <logger name="no.nav.helse" level="INFO" additivity="false">
-        <appender-ref ref="stdout_json"/>
-    </logger>
 
 </configuration>
