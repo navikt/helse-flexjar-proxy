@@ -18,7 +18,7 @@ val jacksonVersion = "2.16.0"
 val mockWebServerVersion = "4.12.0"
 val logbackVersion = "1.4.11"
 val logstashEncoderVersion = "7.4"
-val tokenClientCoreVersion = "3.1.8"
+val tokenClientCoreVersion = "3.1.9"
 
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
