@@ -36,8 +36,6 @@ import io.ktor.server.response.respond
 import io.ktor.util.filter
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyAndClose
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -48,7 +46,8 @@ internal val objectMapper: ObjectMapper = ObjectMapper().apply {
     configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
 }
 
-const val BASE_PATH = "/syk/flexjar"
+private const val PROXY_BASE_PATH = "/syk/flexjar"
+private const val FLEXJAR_SERVICE_DISCOVERY_URL = "http://flexjar-backend.flex"
 
 private data class AzureConfig(
     val appClientId: String,
@@ -59,9 +58,6 @@ private data class AzureConfig(
 
 @Suppress("unused")
 fun Application.main() {
-    val log = LoggerFactory.getLogger("no.nav.helse.Application.main")
-    val corsAllowHost = environment.config.property("security.cors_allow_host").getString()
-
     val azureConfig = AzureConfig(
         appClientId = environment.config.property("security.client_id").getString(),
         appClientSecret = environment.config.property("security.client_secret").getString(),
@@ -69,6 +65,7 @@ fun Application.main() {
         configTokenEndpoint = environment.config.property("security.config_token_endpoint").getString()
     )
 
+    val corsAllowHost = environment.config.property("security.cors_allow_host").getString()
     install(CORS) {
         allowHost(corsAllowHost, schemes = listOf("https"))
         allowMethod(HttpMethod.Get)
@@ -84,20 +81,17 @@ fun Application.main() {
 
     intercept(ApplicationCallPipeline.Call) {
         val httpMethod = call.request.httpMethod
-        when (val requestUri = call.request.uri.replace(BASE_PATH, "")) {
+        when (val requestUri = call.request.uri.replace(PROXY_BASE_PATH, "")) {
             "/isAlive",
             "/isReady" -> {
                 call.respond(HttpStatusCode(HttpStatusCode.OK.value, HttpStatusCode.OK.description))
             }
 
             else -> {
-                log.info("Intercepted ${httpMethod.value} call to \"$requestUri\".")
                 when (httpMethod) {
                     HttpMethod.Post -> {
-                        val flexjarUrl = "http://flexjar-backend.flex$requestUri"
-
-                        val azureResponse = hentAzureToken(httpClient, azureConfig, log)
-                        val response = httpClient.post(flexjarUrl) {
+                        val azureResponse = hentAzureToken(httpClient, azureConfig)
+                        val flexjarResponse = httpClient.post("$FLEXJAR_SERVICE_DISCOVERY_URL$requestUri") {
                             contentType(ContentType.Application.Json)
                             headers {
                                 append("Authorization", "Bearer ${azureResponse.accessToken}")
@@ -106,14 +100,14 @@ fun Application.main() {
                         }
 
                         call.respond(object : WriteChannelContent() {
-                            override val contentLength = response.headers[HttpHeaders.ContentLength]?.toLong()
+                            override val contentLength = flexjarResponse.headers[HttpHeaders.ContentLength]?.toLong()
                             override val contentType =
-                                response.headers[HttpHeaders.ContentType]?.let { ContentType.parse(it) }
+                                flexjarResponse.headers[HttpHeaders.ContentType]?.let { ContentType.parse(it) }
 
                             // Filtrer bort Content-Type og Content-Length fra responsen siden de er satt eksplisitt.
                             override val headers = Headers.build {
                                 appendAll(
-                                    response.headers.filter { key, _ ->
+                                    flexjarResponse.headers.filter { key, _ ->
                                         !key.equals(
                                             HttpHeaders.ContentType,
                                             ignoreCase = true
@@ -121,16 +115,15 @@ fun Application.main() {
                                     }
                                 )
                             }
-                            override val status = response.status
+                            override val status = flexjarResponse.status
 
                             override suspend fun writeTo(channel: ByteWriteChannel) {
-                                response.bodyAsChannel().copyAndClose(channel)
+                                flexjarResponse.bodyAsChannel().copyAndClose(channel)
                             }
                         })
                     }
 
                     else -> {
-                        log.info("Ignoring ${httpMethod.value} call to \"$requestUri\".")
                         call.respond(HttpStatusCode(405, "Method Not Allowed"))
                     }
                 }
@@ -139,9 +132,7 @@ fun Application.main() {
     }
 }
 
-private suspend fun hentAzureToken(httpClient: HttpClient, azureConfig: AzureConfig, log: Logger): AzureResponse {
-    log.info("Henter Azure token: azureConfig.configTokenEndpoint=${azureConfig.configTokenEndpoint} med configTokenEndpoint=${azureConfig.serializeToString()}")
-
+private suspend fun hentAzureToken(httpClient: HttpClient, azureConfig: AzureConfig): AzureResponse {
     return httpClient.submitForm(
         url = azureConfig.configTokenEndpoint,
         formParameters = Parameters.build {
@@ -175,6 +166,3 @@ private data class AzureResponse(
     @JsonAlias("token_type")
     val tokenType: String
 )
-
-fun Any.serializeToString(): String =
-    objectMapper.writeValueAsString(this)
