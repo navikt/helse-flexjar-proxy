@@ -8,7 +8,6 @@ jobs:
     permissions:
       contents: "read"
       id-token: "write"
-    name: Bygg og publiser
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
@@ -17,16 +16,13 @@ jobs:
       ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}
     steps:
 
-      - name: Setup java
-        uses: actions/setup-java@v3
+      - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Gradle wrapper validation
-        uses: gradle/wrapper-validation-action@v1
+      - uses: actions/checkout@v4
+      - uses: gradle/wrapper-validation-action@v1
 
       - uses: actions/cache@v3
         with:
@@ -45,7 +41,7 @@ jobs:
       - name: Build jar
         run: ./gradlew build -x test
 
-      - name: docker-build-push
+      - name: Run docker-build-push
         if: github.ref_name == 'docker-build-push'
         uses: nais/docker-build-push@v0
         id: docker-build-push
@@ -55,7 +51,7 @@ jobs:
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
 
   deploy-to-dev:
-    if: github.ref_name == 'docker-build-push'
+    if: github.ref_name == 'main'
     needs: [build-and-publish]
     runs-on: ubuntu-latest
     steps:
@@ -69,7 +65,7 @@ jobs:
           IMAGE: ${{ needs.build-and-publish.outputs.image }}
 
   deploy-to-prod:
-    if: false
+    if: github.ref_name == 'main'
     needs: [build-and-publish]
     runs-on: ubuntu-latest
     steps:
