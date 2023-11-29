@@ -55,7 +55,7 @@ jobs:
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
 
   deploy-to-dev:
-    if: github.ref_name == 'main'
+    if: github.ref_name == 'docker-build-push'
     needs: [build-and-publish]
     runs-on: ubuntu-latest
     steps:
