@@ -16,7 +16,7 @@ val ktorVersion = "2.3.6"
 val junitVersion = "5.10.1"
 val jacksonVersion = "2.16.0"
 val mockWebServerVersion = "4.12.0"
-val logbackVersion = "1.4.11"
+val logbackVersion = "1.4.13"
 val logstashEncoderVersion = "7.4"
 val tokenClientCoreVersion = "3.1.9"
 
