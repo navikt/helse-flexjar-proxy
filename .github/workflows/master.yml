@@ -9,6 +9,7 @@ jobs:
       contents: "read"
       id-token: "write"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
     env:
@@ -57,6 +58,7 @@ jobs:
     if: github.ref_name == 'main'
     needs: [build-and-publish]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: nais/deploy/actions/deploy@v1
@@ -71,6 +73,7 @@ jobs:
     if: github.ref_name == 'main'
     needs: [build-and-publish]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: nais/deploy/actions/deploy@v1
