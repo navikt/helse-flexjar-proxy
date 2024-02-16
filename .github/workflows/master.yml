@@ -23,7 +23,7 @@ jobs:
           java-version: '17'
 
       - uses: actions/checkout@v4
-      - uses: gradle/wrapper-validation-action@v1
+      - uses: gradle/wrapper-validation-action@v2
 
       - uses: actions/cache@v3
         with:
