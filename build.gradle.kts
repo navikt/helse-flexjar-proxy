@@ -12,7 +12,7 @@ repositories {
     mavenCentral()
 }
 
-val ktorVersion = "2.3.7"
+val ktorVersion = "2.3.8"
 val junitVersion = "5.10.2"
 val jacksonVersion = "2.16.1"
 val mockWebServerVersion = "4.12.0"
