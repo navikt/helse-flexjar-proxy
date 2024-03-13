@@ -14,7 +14,7 @@ repositories {
 
 val ktorVersion = "2.3.7"
 val junitVersion = "5.10.2"
-val jacksonVersion = "2.16.1"
+val jacksonVersion = "2.17.0"
 val mockWebServerVersion = "4.12.0"
 val logbackVersion = "1.4.14"
 val logstashEncoderVersion = "7.4"
